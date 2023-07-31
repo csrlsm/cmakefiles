@@ -31,13 +31,13 @@ if(WIN32)
   add_compile_definitions(ANTLR4CPP_STATIC)
   win_sdk_rule(transpiler)
   install(TARGETS transpiler
-    LIBRARY DESTINATION ${PROJECT_BUILD_DIR}/PREDA/bin
+    RUNTIME DESTINATION ${PROJECT_BUILD_DIR}/PREDA/bin
   )
 elseif(UNIX AND NOT APPLE)
   add_dependencies(transpiler antlr4_shared)
   target_include_directories(transpiler PRIVATE ../../CPCF/libs/linux)
   target_compile_options(transpiler PRIVATE -fPIC -pthread -ldl -lX11)
-  target_link_directories(transpiler PRIVATE ${CMAKE_BINARY_DIR}/PREDA/bin)
+  target_link_directories(transpiler PRIVATE ${CMAKE_BINARY_DIR}/bin)
   target_link_libraries(transpiler PRIVATE
     antlr4-runtime
     ${OXD_LIBSEC_NAME}

@@ -9,15 +9,16 @@ if(POLICY CMP0135)
 endif()
 
 project("preda_bundle")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/PREDA/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/PREDA/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/PREDA/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+
 # ############### download ipp in CPCF ########################
 add_subdirectory(CPCF)
 
 # ############### build oxd_libsec ##############################
-#add_subdirectory(oxd_libsec)
+# add_subdirectory(oxd_libsec)
 
 # ############### build autlr4 ##############################
 add_subdirectory(oxd_preda)
@@ -74,6 +75,7 @@ if(BUNDLE_OPS)
   )
 
   add_dependencies(build_package preda_engine transpiler 3rdParty chain_simulator)
+
   if(WIN32)
     file(GLOB_RECURSE PS1 LIST_DIRECTORIES FALSE ${CMAKE_CURRENT_SOURCE_DIR}/installer/win/*.ps1)
     add_custom_command(TARGET build_package POST_BUILD
