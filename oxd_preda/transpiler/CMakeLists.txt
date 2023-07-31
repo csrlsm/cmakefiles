@@ -39,7 +39,7 @@ elseif(UNIX AND NOT APPLE)
   target_compile_options(transpiler PRIVATE -fPIC -pthread -ldl -lX11)
   target_link_directories(transpiler PRIVATE ${CMAKE_BINARY_DIR}/bin)
   target_link_libraries(transpiler PRIVATE
-    antlr4-runtime
+    antlr4_shared
     ${OXD_LIBSEC_NAME}
     ${IPP_LIB}
   )
