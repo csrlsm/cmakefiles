@@ -57,6 +57,7 @@ if(WIN32)
     wasmtime.dll.lib
     evmone
     ${OXD_LIBSEC_NAME}
+    ${IPP_LIB}
   )
   target_compile_definitions(preda_engine PRIVATE _WINDLL)
   target_compile_options(preda_engine PRIVATE ${CMAKE_CXX_FLAGS} /bigobj)
@@ -92,6 +93,7 @@ elseif(UNIX AND NOT APPLE)
     wasmtime
     evmone
     ${OXD_LIBSEC_NAME}
+    ${IPP_LIB}
   )
 
   set_target_properties(preda_engine PROPERTIES
