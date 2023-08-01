@@ -24,7 +24,7 @@ if(DOWNLOAD_OPS)
   message(STATUS "DOWNLOAD_OPS is ${DOWNLOAD_OPS}")
 
   # # download and copy ipp latest
-  set(ipp_dir ./libs)
+  set(ipp_dir ${PROJECT_SOURCE_DIR}/libs)
 
   if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
     message("CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}, begin download ipp package")

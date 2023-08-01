@@ -243,8 +243,8 @@ elseif(UNIX AND NOT APPLE)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Copying files for 3rdParty on Linux"
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/wasmtime/lib/libwasmtime.so ${PROJECT_BUILD_DIR}/PREDA/bin
-        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/linux/lib/libevmone* ${PROJECT_BUILD_DIR}/PREDA/bin
-		COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_BINARY_DIR}/lib/libantlr4-runtime.so* ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/linux/lib/libevmone.* ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_BINARY_DIR}/lib/libantlr4-runtime.so* ${PROJECT_BUILD_DIR}/PREDA/bin
         COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BUILD_DIR}/PREDA/emscripten chmod -R 755 ./3.1.24
     )
 elseif(APPLE)
