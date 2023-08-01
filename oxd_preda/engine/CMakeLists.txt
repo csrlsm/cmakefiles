@@ -109,10 +109,11 @@ elseif(APPLE)
     PRIVATE
     ../3rdParty/evmone/darwin/include
   )
-  file(GLOB MAC_LIB_FILE
-    ../../CPCF/libs/mac/*.a
-    ../3rdParty/evmone/darwin/lib/*
-    ../3rdParty/wasmtime/lib/*
+  target_link_directories(preda_engine
+    PRIVATE
+    ../../CPCF/libs/mac
+    ../3rdParty/evmone/darwin/lib
+    ../3rdParty/wasmtime/lib
   )
   target_sources(preda_engine
     PRIVATE
@@ -120,7 +121,9 @@ elseif(APPLE)
   )
   target_link_libraries(preda_engine
     PRIVATE
-    ${MAC_LIB_FILE}
+    wasmtime
+    evmon
+    ${IPP_LIB}
     ${OXD_LIBSEC_NAME}
   )
   mac_link_rule(preda_engine)

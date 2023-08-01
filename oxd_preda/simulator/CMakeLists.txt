@@ -18,11 +18,7 @@ file(GLOB_RECURSE CHAIN_SIMULATOR_FILE
   ./*.cpp
   ../../CPCF/core/ext/bignum/*.cpp
 )
-file(GLOB MAC_LIB_FILE
-  ../../CPCF/libs/mac/*.a
-  ../3rdParty/evmone/darwin/lib/*
-  ../3rdParty/wasmtime/lib/*
-)
+
 add_executable(chain_simulator ${CHAIN_SIMULATOR_FILE})
 
 # add_dependencies(chain_simulator oxd_libsec)
@@ -54,7 +50,7 @@ elseif(APPLE)
   target_sources(chain_simulator PRIVATE ../../CPCF/core/os/objc_wrap.mm)
   target_link_libraries(chain_simulator
     PRIVATE
-    ${MAC_LIB_FILE}
+    ${IPP_LIB}
     ${OXD_LIBSEC_NAME}
   )
   mac_link_rule(chain_simulator)
