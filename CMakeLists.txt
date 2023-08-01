@@ -100,6 +100,7 @@ if(BUNDLE_OPS)
       COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/PREDA ${BUNDLE_PATH}/preda-toolchain/opt/PREDA
       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/installer/linux/postinstall_linux.sh ${BUNDLE_PATH}/preda-toolchain/DEBIAN/postinst
       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/installer/linux/control_linux ${BUNDLE_PATH}/preda-toolchain/DEBIAN/control
+      COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_CURRENT_SOURCE_DIR}/installer/linux/* ${BUNDLE_PATH}/preda-toolchain/opt/PREDA/scripts
       COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/PREDA/bin/libantlr4-runtime.so.4.9.3 ${BUNDLE_PATH}/preda-toolchain/usr/lib
     )
     add_custom_command(TARGET build_package POST_BUILD
