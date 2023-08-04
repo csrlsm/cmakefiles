@@ -64,14 +64,14 @@ endfunction()
 include_directories(
     ../CPCF
     ../CPCF/core/ext/botan
-    ../oxd_libsec/src
-    ../oxd_libsec/src/libsodium/libsodium/src/libsodium/include/sodium
+    ./src
+    ./src/libsodium/libsodium/src/libsodium/include/sodium
 )
 
 file(GLOB ESSENTIALS_SOURCES ../CPCF/essentials.cpp)
 file(GLOB BOTAN_SOURCES ../CPCF/core/ext/botan/botan.cpp)
-file(GLOB OXD_LIBSEC_SOURCES ../oxd_libsec/src/*.cpp)
-file(GLOB LIBSODIUM_SOURCES ../oxd_libsec/src/libsodium/*.cpp)
+file(GLOB OXD_LIBSEC_SOURCES ./src/*.cpp)
+file(GLOB LIBSODIUM_SOURCES ./src/libsodium/*.cpp)
 
 # file(GLOB files_to_remove "${PROJECT_SOURCE_DIR}/lib/*")
 # foreach(file ${files_to_remove})
