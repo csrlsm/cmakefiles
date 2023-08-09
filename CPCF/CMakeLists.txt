@@ -6,7 +6,7 @@ if(POLICY CMP0135)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project("cpcf")
+project("CPCF")
 
 if(WIN32)
   # Use the USERPROFILE environment variable to get the user's home directory on Windows
@@ -18,13 +18,12 @@ endif()
 
 set(DOWNLOAD_DIR "${HOME_DIR}/.cmake")
 file(MAKE_DIRECTORY ${DOWNLOAD_DIR})
-option(DOWNLOAD_OPS "download ipp packages" OFF)
+option(DOWNLOAD_IPP "download ipp packages" OFF)
+option(DOWNLOAD_MLK "download mlk packages" OFF)
+set(ipp_dir ${PROJECT_SOURCE_DIR}/libs)
 
-if(DOWNLOAD_OPS)
-  message(STATUS "DOWNLOAD_OPS is ${DOWNLOAD_OPS}")
-
-  # # download and copy ipp latest
-  set(ipp_dir ${PROJECT_SOURCE_DIR}/libs)
+if(DOWNLOAD_IPP)
+  message(STATUS "DOWNLOAD_IPP is ${DOWNLOAD_IPP}")
 
   if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
     message("CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME}, begin download ipp package")
@@ -48,3 +47,29 @@ if(DOWNLOAD_OPS)
     message("current OS platform unkonw, download ipp latest failed.....")
   endif()
 endif()
+
+if(DOWNLOAD_MLK)
+  message(STATUS "DOWNLOAD_MLK is ${DOWNLOAD_MLK}")
+
+  if(WIN32)
+    message("CMAKE_HOST_SYSTEM_NAME: Windows, begin download mlk package")
+    set(URL "https://github.com/jiapw/CPCF/releases/download/CPCF-Libs/cpcf_win_mkl.7z")
+    set(SHA256 "D8C3EA14A0562FB49BB48FE6B52A9D33285D706989C5946DB0A67CFCEBD24AE8")
+    file(DOWNLOAD ${URL} ${DOWNLOAD_DIR}/cpcf_win_mkl.7z SHOW_PROGRESS EXPECTED_HASH SHA256=${SHA256})
+    file(ARCHIVE_EXTRACT INPUT ${DOWNLOAD_DIR}/cpcf_win_mkl.7z DESTINATION ${ipp_dir}/win)
+  elseif(UNIX AND NOT APPLE)
+    message("CMAKE_HOST_SYSTEM_NAME: Linux, begin download mlk package")
+    set(URL "https://github.com/jiapw/CPCF/releases/download/CPCF-Libs/cpcf_linux_mkl.7z")
+    set(SHA256 "ACF7B599CC3A601C913A24A724CD353C23C2D8378502313D40ECA2669A91943E")
+    file(DOWNLOAD ${URL} ${DOWNLOAD_DIR}/cpcf_linux_mkl.7z SHOW_PROGRESS EXPECTED_HASH SHA256=${SHA256})
+    file(ARCHIVE_EXTRACT INPUT ${DOWNLOAD_DIR}/cpcf_linux_mkl.7z DESTINATION ${ipp_dir}/linux)
+  elseif(APPLE)
+    message("CMAKE_HOST_SYSTEM_NAME: Darwin, begin download mlk package")
+    set(URL "https://github.com/jiapw/CPCF/releases/download/CPCF-Libs/cpcf_mac_mkl.7z")
+    set(SHA256 "70C62852229377128E664EC1A48F04C725BE1A9C731869C83DA12AA6B24DC6BB")
+    file(DOWNLOAD ${URL} ${DOWNLOAD_DIR}/cpcf_mac_mkl.7z SHOW_PROGRESS EXPECTED_HASH SHA256=${SHA256})
+    file(ARCHIVE_EXTRACT INPUT ${DOWNLOAD_DIR}/cpcf_mac_mkl.7z DESTINATION ${ipp_dir}/mac)
+  endif()
+endif()
+
+# add_library()
