@@ -20,50 +20,52 @@ file(GLOB TRANSPILER_SOURCES
 
 add_library(transpiler SHARED ${TRANSPILER_SOURCES})
 
+# find_library(ANTLR4 antlr4-runtime ${CMAKE_SOURCE_DIR}/bin/bin_${CMAKE_BUILD_TYPE}/$<0:>)
 if(WIN32)
   add_dependencies(transpiler antlr4-runtime)
-  target_include_directories(transpiler PRIVATE ../../CPCF/libs/win)
+  target_link_directories(transpiler PRIVATE
+    ../../CPCF/libs/win
+
+    # ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+  )
   target_link_libraries(transpiler PRIVATE
     antlr4-runtime
-    ${OXD_LIBSEC_NAME}
   )
-
-  add_compile_definitions(ANTLR4CPP_STATIC)
+  target_compile_definitions(transpiler PRIVATE ANTLR4CPP_STATIC)
   win_sdk_rule(transpiler)
-  install(TARGETS transpiler
-    RUNTIME DESTINATION ${PROJECT_BUILD_DIR}/PREDA/bin
-  )
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    target_compile_options(transpiler PRIVATE
+
+      # $<$<CONFIG:Debug>:/ZI /JMC /W4 /sdl /MP /RTC1 /FC /Od /wd4251 /ZW->
+      # $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /MP /O2 /Oi /GL /wd4251 /FC /ZW->
+      $<$<CONFIG:Debug>:/ZI /JMC /sdl /MP>
+      $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /Gd /Oi /FC>
+    )
+  endif()
+
+  set_property(TARGET transpiler PROPERTY CXX_STANDARD 14)
 elseif(UNIX AND NOT APPLE)
   add_dependencies(transpiler antlr4_shared)
-  target_include_directories(transpiler PRIVATE ../../CPCF/libs/linux)
+  target_include_directories(transpiler PRIVATE
+    ../../CPCF/libs/linux
+  )
   target_compile_options(transpiler PRIVATE -fPIC -pthread -ldl -lX11)
   target_link_directories(transpiler PRIVATE ${CMAKE_BINARY_DIR}/bin)
   target_link_libraries(transpiler PRIVATE
     antlr4_shared
-    ${OXD_LIBSEC_NAME}
     ${IPP_LIB}
   )
   set_target_properties(transpiler PROPERTIES
     PREFIX ""
     SUFFIX ".so"
   )
-  install(TARGETS transpiler
-    LIBRARY DESTINATION ${PROJECT_BUILD_DIR}/PREDA/bin
-  )
 elseif(APPLE)
   file(GLOB MAC_SOURCE_FILE ../../CPCF/libs/mac/*.a)
   add_dependencies(transpiler antlr4_shared)
-
-  # target_link_directories(transpiler PRIVATE
-  # ../../oxd_libsec/lib
-  # ${CMAKE_BINARY_DIR}/PREDA/bin
-  # ${CMAKE_HOME_DIRECTORY}/dist
-  # )
   target_link_libraries(transpiler PRIVATE
     antlr4_shared
     ${MAC_SOURCE_FILE}
-
-    # ${OXD_LIBSEC_NAME}
   )
 
   # target_sources(transpiler PRIVATE ${MAC_SOURCE_FILE})
@@ -72,19 +74,18 @@ elseif(APPLE)
     SUFFIX ".dylib"
   )
   mac_link_rule(transpiler)
-  install(TARGETS transpiler
-    LIBRARY DESTINATION ${PROJECT_BUILD_DIR}/PREDA/bin
-  )
 endif()
 
 target_include_directories(transpiler PRIVATE
   ../3rdParty/antlr4/runtime/Cpp/runtime/src
-  ./
-  ./transpiler
-  ./antlr_generated
 )
 
 target_sources(transpiler PRIVATE ${TRANSPILER_SOURCES})
+set_target_properties(transpiler PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+)
 
 # target_link_libraries(transpiler PRIVATE antlr4-runtime)
 set_property(TARGET transpiler PROPERTY CMAKE_POLICY_DEFAULT_CMP0079 NEW)

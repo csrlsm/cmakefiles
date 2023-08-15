@@ -1,30 +1,35 @@
 ﻿# CMakeList.txt: preda_preoject
 #
 cmake_minimum_required(VERSION 3.18)
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;StaticLibDebug;StaticLibRelease" CACHE STRING "" FORCE)
+
+# set(CMAKE_CONFIGURATION_TYPES "Debug;Release;StaticLibDebug;StaticLibRelease" CACHE STRING "" FORCE)
 # Enable Hot Reload for MSVC compilers if supported.
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
-    # set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
-    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,StaticLibDebug>:EditAndContinue>,$<$<CONFIG:Debug,StaticLibDebug>:ProgramDatabase>>")
+    set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+
+    # set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,StaticLibDebug>:EditAndContinue>,$<$<CONFIG:Debug,StaticLibDebug>:ProgramDatabase>>")
 endif()
+
 set(CMAKE_CXX_FLAGS_DEBUG "/MTd")
 set(CMAKE_CXX_FLAGS_RELEASE "/MT")
-set(CMAKE_CXX_FLAGS_StaticLibDebug "${CMAKE_CXX_FLAGS_DEBUG}")
-set(CMAKE_CXX_FLAGS_StaticLibRelease "${CMAKE_CXX_FLAGS_RELEASE}")
-set(CMAKE_C_FLAGS_StaticLibDebug "${CMAKE_C_FLAGS_DEBUG} /MTd")
-set(CMAKE_C_FLAGS_StaticLibRelease "${CMAKE_C_FLAGS_RELEASE} /MT")
-set(CMAKE_EXE_LINKER_FLAGS_StaticLibDebug "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
-set(CMAKE_EXE_LINKER_FLAGS_StaticLibRelease "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 
+# set(CMAKE_CXX_FLAGS_StaticLibDebug "${CMAKE_CXX_FLAGS_DEBUG}")
+# set(CMAKE_CXX_FLAGS_StaticLibRelease "${CMAKE_CXX_FLAGS_RELEASE}")
+# set(CMAKE_C_FLAGS_StaticLibDebug "${CMAKE_C_FLAGS_DEBUG} /MTd")
+# set(CMAKE_C_FLAGS_StaticLibRelease "${CMAKE_C_FLAGS_RELEASE} /MT")
+# set(CMAKE_EXE_LINKER_FLAGS_StaticLibDebug "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+# set(CMAKE_EXE_LINKER_FLAGS_StaticLibRelease "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 project("oxd_libsec")
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_CONFIGURATION_TYPES Release Debug StaticLibDebug StaticLibRelease)
+set(CMAKE_CONFIGURATION_TYPES Release Debug)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 function(win_sdk_rule target)
     if(MSVC)
         # Retrieve the necessary environment variables from the vcvars config
@@ -34,6 +39,7 @@ function(win_sdk_rule target)
         set(vcvars_LIB "${VC_TOOLS_DIR}/Lib")
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+
         if(vcvars_INCLUDE)
             target_include_directories(${target} SYSTEM PRIVATE ${vcvars_INCLUDE})
         endif()
@@ -62,24 +68,27 @@ function(win_sdk_rule target)
     endif()
 endfunction()
 
-
 # ################ build oxd_libsec.lib##########################
 file(GLOB ESSENTIALS_SOURCES ../CPCF/essentials.*)
 file(GLOB BOTAN_SOURCES ../CPCF/core/ext/botan/botan.*)
-file(GLOB OXD_LIBSEC_SOURCES ./src/*.cpp)
-file(GLOB LIBSODIUM_SOURCES ./src/libsodium/*.cpp)
-file(GLOB OXD_LIBSEC_HEAD ./src/*.h)
-source_group("CPCF"  FILES
+file(GLOB OXD_LIBSEC_SOURCES src/*.cpp)
+file(GLOB LIBSODIUM_SOURCES src/libsodium/*.cpp)
+file(GLOB OXD_LIBSEC_HEAD src/*.h)
+set(GROUP_FILE ${OXD_LIBSEC_HEAD})
+source_group("CPCF" FILES
     ${BOTAN_SOURCES}
     ${ESSENTIALS_SOURCES}
 )
-source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${OXD_LIBSEC_HEAD} ${OXD_LIBSEC_SOURCES} ${LIBSODIUM_SOURCES})
+
+# source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${LIBSODIUM_SOURCES} ${GROUP_FILE})
+source_group(TREE ${PROJECT_SOURCE_DIR} FILES ${OXD_LIBSEC_SOURCES} ${GROUP_FILE} ${LIBSODIUM_SOURCES})
 add_library(oxd_libsec STATIC
     ${ESSENTIALS_SOURCES}
     ${BOTAN_SOURCES}
     ${OXD_LIBSEC_SOURCES}
     ${LIBSODIUM_SOURCES}
 )
+
 if(WIN32)
     file(GLOB WIN_IPP_LIBS ../CPCF/libs/win/ipp*.lib)
     target_link_directories(oxd_libsec PRIVATE ../CPCF/libs/win)
@@ -87,10 +96,37 @@ if(WIN32)
     win_sdk_rule(oxd_libsec)
     set_target_properties(oxd_libsec PROPERTIES
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug,StaticLibDebug>:Debug>"
-        STATICLIBDEBUG_POSTFIX "_d"
+
+        # STATICLIBDEBUG_POSTFIX "_d"
     )
     target_compile_definitions(oxd_libsec PRIVATE -DUNICODE -D_UNICODE _CONSOLE)
     target_compile_options(oxd_libsec PRIVATE
+        $<$<CONFIG:Debug,StaticLibDebug>:/ZI /JMC /W3 /sdl /RTC1 /permissive /Od /bigobj>
+        $<$<CONFIG:Release,StaticLibRelease>:/Zi /W3 /sdl /Gy /permissive /O2 /Oi /GL>
+    )
+
+    # ##################### add libsec_test to build as exe ###################################
+    add_executable(libsec_test
+        ${ESSENTIALS_SOURCES}
+        ${BOTAN_SOURCES}
+        ${OXD_LIBSEC_SOURCES}
+        ${LIBSODIUM_SOURCES}
+    )
+    target_sources(libsec_test PRIVATE
+        test/sec_tests.cpp
+        test/proj.win/main.cpp
+    )
+    target_link_directories(libsec_test PRIVATE ../CPCF/libs/win)
+    target_link_libraries(libsec_test PRIVATE ${WIN_IPP_LIBS})
+    win_sdk_rule(libsec_test)
+    set_target_properties(libsec_test PROPERTIES
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug,StaticLibDebug>:Debug>"
+
+        # STATICLIBDEBUG_POSTFIX "_d"
+    )
+    target_include_directories(libsec_test PRIVATE src/libsodium/libsodium/src/libsodium/include/sodium)
+    target_compile_definitions(libsec_test PRIVATE -DUNICODE -D_UNICODE _CONSOLE)
+    target_compile_options(libsec_test PRIVATE
         $<$<CONFIG:Debug,StaticLibDebug>:/ZI /JMC /W3 /sdl /RTC1 /permissive /Od /bigobj>
         $<$<CONFIG:Release,StaticLibRelease>:/Zi /W3 /sdl /Gy /permissive /O2 /Oi /GL>
     )

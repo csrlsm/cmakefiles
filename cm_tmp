@@ -1,0 +1,52 @@
+# ############### add 3rParty target #######################
+add_custom_target(3rdParty
+    WORKING_DIRECTORY ${PROJECT_BUILD_DIR}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BUILD_DIR}/PREDA/bin
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BUILD_DIR}/PREDA/examples
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BUILD_DIR}/PREDA/solc
+    COMMENT "Setting up 3rdParty"
+)
+add_dependencies(3rdParty preda_engine transpiler chain_simulator)
+file(GLOB_RECURSE SOLC_FILE LIST_DIRECTORIES FALSE ./bin/solc/solc*)
+add_custom_command(TARGET 3rdParty POST_BUILD
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy ${SOLC_FILE} ${PROJECT_BUILD_DIR}/PREDA/solc/
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin/compile_env ${PROJECT_BUILD_DIR}/PREDA/compile_env
+    COMMENT "Copying examples and emscripten to directory"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/simulator/contracts ${PROJECT_BUILD_DIR}/PREDA/examples
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin/emscripten ${PROJECT_BUILD_DIR}/PREDA/emscripten
+    COMMENT "Copying commond files for 3rdParty"
+)
+
+if(WIN32)
+    add_custom_command(TARGET 3rdParty POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Copying mingw64 and scripts files to directory"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/win/bin/evmone.dll ${PROJECT_BUILD_DIR}/PREDA/bin/
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/wasmtime/lib/wasmtime.dll ${PROJECT_BUILD_DIR}/PREDA/bin/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin/mingw64 ${PROJECT_BUILD_DIR}/PREDA/mingw64
+    )
+elseif(UNIX AND NOT APPLE)
+    add_custom_command(TARGET 3rdParty POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Copying files for 3rdParty on Linux"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/wasmtime/lib/libwasmtime.so ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/linux/lib/libevmone.* ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_BINARY_DIR}/lib/libantlr4-runtime.so* ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BUILD_DIR}/PREDA/emscripten chmod -R 755 ./3.1.24
+    )
+elseif(APPLE)
+    add_custom_command(TARGET 3rdParty POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/wasmtime/lib/libwasmtime.dylib ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/darwin/lib/libevmone.* ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_BINARY_DIR}/lib/libantlr4-*.dylib ${PROJECT_BUILD_DIR}/PREDA/bin
+        COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BUILD_DIR}/PREDA/emscripten chmod -R 755 ./3.1.24
+        COMMENT "Copying files for 3rdParty on macOS"
+    )
+endif()
+
+set_target_properties(3rdParty PROPERTIES
+    EXCLUDE_FROM_ALL true
+    EXCLUDE_FROM_DEFAULT_BUILD true
+)

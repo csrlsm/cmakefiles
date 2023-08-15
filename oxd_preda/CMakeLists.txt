@@ -19,11 +19,12 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CONFIGURATION_TYPES Release Debug)
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/PREDA/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/PREDA/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/PREDA/bin)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
 
 if(WIN32)
     # Use the USERPROFILE environment variable to get the user's home directory on Windows
@@ -36,10 +37,10 @@ endif()
 set(PROJECT_BUILD_DIR ${CMAKE_BINARY_DIR})
 set(DOWNLOAD_DIR "${HOME_DIR}/.cmake")
 file(MAKE_DIRECTORY ${DOWNLOAD_DIR})
-option(DOWNLOAD_OPS "download 3rdParty packages" OFF)
+option(DOWNLOAD_3RDPARTY "download 3rdParty packages" OFF)
 
-if(DOWNLOAD_OPS)
-    message(STATUS "DOWNLOAD_OPS is ${DOWNLOAD_OPS}")
+if(DOWNLOAD_3RDPARTY)
+    message(STATUS "DOWNLOAD_3RDPARTY is ${DOWNLOAD_3RDPARTY}")
 
     # # download wasmtime
     set(3rdParty ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty)
@@ -134,47 +135,21 @@ if(DOWNLOAD_OPS)
         message("current OS platform unkonw,${CMAKE_HOST_SYSTEM_NAME} download solc latest failed.....")
     endif()
 else()
-    message(STATUS "DOWNLOAD_OPS is ${DOWNLOAD_OPS}")
-    message("Download 3rdParty is off by default, please set -DDOWNLOAD_OPS=ON to download")
+    message(STATUS "DOWNLOAD_3RDPARTY is ${DOWNLOAD_3RDPARTY}")
+    message("Download 3rdParty is off by default, please set -DDOWNLOAD_3RDPARTY=ON to download")
 endif()
 
-# ############### Determine if the oxd_libsec exists ####################
-# if(NOT "$<CONFIG>" MATCHES "Release")
-# set(OXD_LIBSEC_NAME oxd_libsec_d)
-# else()
-# set(OXD_LIBSEC_NAME oxd_libsec)
-# endif()
 if(WIN32)
-    file(GLOB OXD_LIBSEC_NAME ../oxd_libsec/lib/oxd_libsec*.lib)
-    file(GLOB IPP_LIB ../CPCF/libs/win/*.lib)
+    file(GLOB IPP_LIB ../CPCF/libs/win/ipp*.lib)
 elseif(UNIX AND NOT APPLE)
-    file(GLOB OXD_LIBSEC_NAME ../oxd_libsec/lib/liboxd_libsec*.a)
-    file(GLOB IPP_LIB ../CPCF/libs/linux/*.a)
+    file(GLOB IPP_LIB ../CPCF/libs/linux/ipp*.a)
 elseif(APPLE)
-    file(GLOB OXD_LIBSEC_NAME ../oxd_libsec/lib/liboxd_libsec*.a)
-    file(GLOB IPP_LIB ../CPCF/libs/mac/*.a)
+    file(GLOB IPP_LIB ../CPCF/libs/mac/ipp*.a)
 endif()
-
-if(OXD_LIBSEC_NAME STREQUAL "")
-    message(WARNING "Can not find oxd_libsec library in ../oxd_libsec/lib, please build oxd_libsec first....")
-endif()
-
-message("oxd_libsec list ${OXD_LIBSEC_NAME}")
 
 # ############### build autlr4 ##############################
 if(WIN32)
     set(ANTLR4_DIR ./3rdParty/antlr4/runtime/Cpp)
-    include_directories(
-        ${ANTLR4_DIR}/runtime/src/support
-        ${ANTLR4_DIR}/runtime/src/tree
-        ${ANTLR4_DIR}/runtime/src/misc
-        ${ANTLR4_DIR}/runtime/src/tree/pattern
-        ${ANTLR4_DIR}/runtime/src/dfa
-        ${ANTLR4_DIR}/runtime/src
-        ${ANTLR4_DIR}/runtime/src/atn
-        ${ANTLR4_DIR}/runtime/src/tree/xpath
-    )
-
     file(GLOB_RECURSE ANTLR4_SOURCE
         ${ANTLR4_DIR}/runtime/src/*.cpp
         ${ANTLR4_DIR}/runtime/src/atn/*.cpp
@@ -188,11 +163,36 @@ if(WIN32)
     add_library(antlr4-runtime STATIC
         ${ANTLR4_SOURCE}
     )
+
     target_compile_definitions(antlr4-runtime PRIVATE ANTLR4CPP_STATIC)
-    set_target_properties(antlr4-runtime PROPERTIES
-        OUTPUT_NAME "antlr4-runtime"
+    target_include_directories(antlr4-runtime PRIVATE
+        ${ANTLR4_DIR}/runtime/src/support
+        ${ANTLR4_DIR}/runtime/src/tree
+        ${ANTLR4_DIR}/runtime/src/misc
+        ${ANTLR4_DIR}/runtime/src/tree/pattern
+        ${ANTLR4_DIR}/runtime/src/dfa
+        ${ANTLR4_DIR}/runtime/src
+        ${ANTLR4_DIR}/runtime/src/atn
+        ${ANTLR4_DIR}/runtime/src/tree/xpath
     )
 
+    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        target_compile_options(antlr4-runtime PRIVATE
+
+            # $<$<CONFIG:Debug>:/ZI /JMC /W4 /sdl /MP /RTC1 /FC /Od /wd4251 /ZW->
+            # $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /MP /O2 /Oi /GL /wd4251 /FC /ZW->
+            $<$<CONFIG:Debug>:/ZI /JMC /W4 /sdl /MP /RTC1 /FC /Od /wd4251>
+            $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /MP /O2 /Oi /GL /wd4251>
+        )
+    endif()
+
+    set_target_properties(antlr4-runtime PROPERTIES
+        OUTPUT_NAME "antlr4-runtime"
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+    )
+    set_property(TARGET antlr4-runtime PROPERTY CXX_STANDARD 14)
 elseif(UNIX OR APPLE)
     set(BUILD_SHARED_LIBS ON)
     set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
@@ -209,56 +209,3 @@ add_subdirectory(transpiler)
 
 # ############## build chain_simulator #################
 add_subdirectory(simulator)
-
-# ############### add 3rParty target #######################
-add_custom_target(3rdParty
-    WORKING_DIRECTORY ${PROJECT_BUILD_DIR}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BUILD_DIR}/PREDA/bin
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BUILD_DIR}/PREDA/examples
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BUILD_DIR}/PREDA/solc
-    COMMENT "Setting up 3rdParty"
-)
-add_dependencies(3rdParty preda_engine transpiler chain_simulator)
-file(GLOB_RECURSE SOLC_FILE LIST_DIRECTORIES FALSE ./bin/solc/solc*)
-add_custom_command(TARGET 3rdParty POST_BUILD
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy ${SOLC_FILE} ${PROJECT_BUILD_DIR}/PREDA/solc/
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin/compile_env ${PROJECT_BUILD_DIR}/PREDA/compile_env
-    COMMENT "Copying examples and emscripten to directory"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/simulator/contracts ${PROJECT_BUILD_DIR}/PREDA/examples
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin/emscripten ${PROJECT_BUILD_DIR}/PREDA/emscripten
-    COMMENT "Copying commond files for 3rdParty"
-)
-
-if(WIN32)
-    add_custom_command(TARGET 3rdParty POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Copying mingw64 and scripts files to directory"
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/win/bin/evmone.dll ${PROJECT_BUILD_DIR}/PREDA/bin/
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/wasmtime/lib/wasmtime.dll ${PROJECT_BUILD_DIR}/PREDA/bin/
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/bin/mingw64 ${PROJECT_BUILD_DIR}/PREDA/mingw64
-    )
-elseif(UNIX AND NOT APPLE)
-    add_custom_command(TARGET 3rdParty POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Copying files for 3rdParty on Linux"
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/wasmtime/lib/libwasmtime.so ${PROJECT_BUILD_DIR}/PREDA/bin
-        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/linux/lib/libevmone.* ${PROJECT_BUILD_DIR}/PREDA/bin
-        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_BINARY_DIR}/lib/libantlr4-runtime.so* ${PROJECT_BUILD_DIR}/PREDA/bin
-        COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BUILD_DIR}/PREDA/emscripten chmod -R 755 ./3.1.24
-    )
-elseif(APPLE)
-    add_custom_command(TARGET 3rdParty POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/wasmtime/lib/libwasmtime.dylib ${PROJECT_BUILD_DIR}/PREDA/bin
-        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/evmone/darwin/lib/libevmone.* ${PROJECT_BUILD_DIR}/PREDA/bin
-        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a ${CMAKE_BINARY_DIR}/lib/libantlr4-*.dylib ${PROJECT_BUILD_DIR}/PREDA/bin
-        COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BUILD_DIR}/PREDA/emscripten chmod -R 755 ./3.1.24
-        COMMENT "Copying files for 3rdParty on macOS"
-    )
-endif()
-
-set_target_properties(3rdParty PROPERTIES
-    EXCLUDE_FROM_ALL true
-    EXCLUDE_FROM_DEFAULT_BUILD true
-)
