@@ -14,11 +14,19 @@ project("transpiler")
 # ############### build transpiler ###############
 file(GLOB TRANSPILER_SOURCES
   ./*.cpp
-  ./transpiler/*.cpp
-  ./antlr_generated/*.cpp
+  ./*.h
 )
-
-add_library(transpiler SHARED ${TRANSPILER_SOURCES})
+file(GLOB_RECURSE TRANSPILER_FILES
+  ./transpiler/*.cpp
+  ./transpiler/*.h
+)
+file(GLOB_RECURSE ANTLR_GEN
+  ./antlr_generated/*.cpp
+  ./antlr_generated/*.h
+)
+source_group("transpiler" FILES ${TRANSPILER_FILES})
+source_group("antlr_generated" FILES ${ANTLR_GEN})
+add_library(transpiler SHARED ${TRANSPILER_SOURCES} ${TRANSPILER_FILES} ${ANTLR_GEN})
 
 # find_library(ANTLR4 antlr4-runtime ${CMAKE_SOURCE_DIR}/bin/bin_${CMAKE_BUILD_TYPE}/$<0:>)
 if(WIN32)
@@ -31,17 +39,23 @@ if(WIN32)
   target_link_libraries(transpiler PRIVATE
     antlr4-runtime
   )
-  target_compile_definitions(transpiler PRIVATE ANTLR4CPP_STATIC)
+  target_compile_definitions(transpiler PRIVATE ANTLR4CPP_STATIC _MBCS)
   win_sdk_rule(transpiler)
 
   if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(transpiler PRIVATE
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "")
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG:FULL /INCREMENTAL")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE_INIT} /DEBUG:FULL /OPT:REF /OPT:ICF /LTCG:incremental")
 
-      # $<$<CONFIG:Debug>:/ZI /JMC /W4 /sdl /MP /RTC1 /FC /Od /wd4251 /ZW->
-      # $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /MP /O2 /Oi /GL /wd4251 /FC /ZW->
-      $<$<CONFIG:Debug>:/ZI /JMC /sdl /MP>
-      $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /Gd /Oi /FC>
+    # set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG")
+    target_compile_options(transpiler PRIVATE
+      $<$<CONFIG:Debug>:/ZI /JMC /sdl /MP /permissive- /FC>
+      $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /Gd /Oi /FC /permissive- /GL>
     )
+
+    # target_link_options(transpiler PRIVATE $<$<CONFIG:Release>:/LTCG>)
+
+    # set_target_properties(transpiler PROPERTIES LINK_FLAGS_RELEASE "/LTCG")
   endif()
 
   set_property(TARGET transpiler PROPERTY CXX_STANDARD 14)
@@ -82,9 +96,9 @@ target_include_directories(transpiler PRIVATE
 
 target_sources(transpiler PRIVATE ${TRANSPILER_SOURCES})
 set_target_properties(transpiler PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
-  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
-  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
 )
 
 # target_link_libraries(transpiler PRIVATE antlr4-runtime)

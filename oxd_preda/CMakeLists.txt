@@ -11,7 +11,7 @@ endif()
 include(CMake_rules.txt)
 project("oxd_preda")
 
-# # set golbal config for each platform
+# set golbal config for each platform
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -21,10 +21,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CONFIGURATION_TYPES Release Debug)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-endif()
+# set(CMAKE_CXX_FLAGS "")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3 /EHsc")
+string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS_DEBUG "")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd /ZI /Od /RTC1")
+set(CMAKE_CXX_FLAGS_RELEASE "")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2 /DNDEBUG")
 
 if(WIN32)
     # Use the USERPROFILE environment variable to get the user's home directory on Windows
@@ -149,48 +152,55 @@ endif()
 
 # ############### build autlr4 ##############################
 if(WIN32)
-    set(ANTLR4_DIR ./3rdParty/antlr4/runtime/Cpp)
+    set(ANTLR4_DIR 3rdParty/antlr4/runtime/Cpp)
     file(GLOB_RECURSE ANTLR4_SOURCE
         ${ANTLR4_DIR}/runtime/src/*.cpp
-        ${ANTLR4_DIR}/runtime/src/atn/*.cpp
-        ${ANTLR4_DIR}/runtime/src/dfa/*.cpp
-        ${ANTLR4_DIR}/runtime/src/misc/*.cpp
-        ${ANTLR4_DIR}/runtime/src/support/*.cpp
-        ${ANTLR4_DIR}/runtime/src/tree/*.cpp
-        ${ANTLR4_DIR}/runtime/src/tree/pattern/*.cpp
-        ${ANTLR4_DIR}/runtime/src/tree/xpath/*.cpp
+
+        # ${ANTLR4_DIR}/runtime/src/atn/*.cpp
+        # ${ANTLR4_DIR}/runtime/src/dfa/*.cpp
+        # ${ANTLR4_DIR}/runtime/src/misc/*.cpp
+        # ${ANTLR4_DIR}/runtime/src/support/*.cpp
+        # ${ANTLR4_DIR}/runtime/src/tree/*.cpp
+        # ${ANTLR4_DIR}/runtime/src/tree/pattern/*.cpp
+        # ${ANTLR4_DIR}/runtime/src/tree/xpath/*.cpp
     )
+
+    file(GLOB_RECURSE ANTLR4_HEADER
+        ${ANTLR4_DIR}/runtime/src/*.h
+    )
+
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/antlr4/runtime/Cpp/runtime/src PREFIX "Source Files" FILES ${ANTLR4_SOURCE})
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty/antlr4/runtime/Cpp/runtime/src PREFIX "Header_Files" FILES ${ANTLR4_HEADER})
     add_library(antlr4-runtime STATIC
         ${ANTLR4_SOURCE}
+        ${ANTLR4_HEADER}
     )
 
     target_compile_definitions(antlr4-runtime PRIVATE ANTLR4CPP_STATIC)
     target_include_directories(antlr4-runtime PRIVATE
-        ${ANTLR4_DIR}/runtime/src/support
-        ${ANTLR4_DIR}/runtime/src/tree
-        ${ANTLR4_DIR}/runtime/src/misc
-        ${ANTLR4_DIR}/runtime/src/tree/pattern
-        ${ANTLR4_DIR}/runtime/src/dfa
         ${ANTLR4_DIR}/runtime/src
-        ${ANTLR4_DIR}/runtime/src/atn
-        ${ANTLR4_DIR}/runtime/src/tree/xpath
+
+        # ${ANTLR4_DIR}/runtime/src/support
+        # ${ANTLR4_DIR}/runtime/src/tree
+        # ${ANTLR4_DIR}/runtime/src/misc
+        # ${ANTLR4_DIR}/runtime/src/tree/pattern
+        # ${ANTLR4_DIR}/runtime/src/dfa
+        # ${ANTLR4_DIR}/runtime/src/atn
+        # ${ANTLR4_DIR}/runtime/src/tree/xpath
     )
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         target_compile_options(antlr4-runtime PRIVATE
-
-            # $<$<CONFIG:Debug>:/ZI /JMC /W4 /sdl /MP /RTC1 /FC /Od /wd4251 /ZW->
-            # $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /MP /O2 /Oi /GL /wd4251 /FC /ZW->
             $<$<CONFIG:Debug>:/ZI /JMC /W4 /sdl /MP /RTC1 /FC /Od /wd4251>
-            $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /MP /O2 /Oi /GL /wd4251>
+            $<$<CONFIG:Release>:/Zi /W4 /sdl /Gy /MP /O2 /FC /Oi /GL /wd4251>
         )
     endif()
 
     set_target_properties(antlr4-runtime PROPERTIES
         OUTPUT_NAME "antlr4-runtime"
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
     )
     set_property(TARGET antlr4-runtime PROPERTY CXX_STANDARD 14)
 elseif(UNIX OR APPLE)
@@ -209,3 +219,33 @@ add_subdirectory(transpiler)
 
 # ############## build chain_simulator #################
 add_subdirectory(simulator)
+
+add_custom_target(3rdParty
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "copy evmone and wasmtime library to bin/bin_<CONFIG> dir"
+)
+
+if(WIN32)
+    add_custom_command(TARGET 3rdParty POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy 3rdParty/evmone/win/bin/evmone.dll bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+        COMMAND ${CMAKE_COMMAND} -E copy 3rdParty/wasmtime/lib/wasmtime.dll bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+    )
+elseif(UNIX AND NOT APPLE)
+    add_custom_command(TARGET 3rdParty POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a 3rdParty/evmone/linux/lib/libevmone.* bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a 3rdParty/wasmtime/lib/libwasmtime.so bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+    )
+elseif(APPLE)
+    add_custom_command(TARGET 3rdParty POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a 3rdParty/evmone/darwin/lib/libevmone.* bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+        COMMAND ${CMAKE_COMMAND} -E chdir ./ cp -a 3rdParty/wasmtime/lib/libwasmtime.* bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+    )
+endif()
+
+set_target_properties(3rdParty PROPERTIES
+    EXCLUDE_FROM_ALL true
+    EXCLUDE_FROM_DEFAULT_BUILD true
+)

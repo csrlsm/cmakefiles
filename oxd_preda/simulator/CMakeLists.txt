@@ -13,37 +13,40 @@ project("chain_simulator")
 
 # ############## build chain_simulator #################
 file(GLOB_RECURSE CHAIN_SIMULATOR_FILE
-  ../native/*.cpp
-  ../native/types/*.cpp
-  ./*.cpp
-  ../../CPCF/core/ext/bignum/*.cpp
+  ../../CPCF/core/ext/bignum/big_num.*
+  ../../CPCF/core/ext/bignum/precision_num.*
+  ../../CPCF/core/ext/botan/botan.*
+  ../../CPCF/core/ext/lib_inc.c
+  ../../CPCF/core/ext/bignum/ttmath/ttmathuint_x86_64_msvc.asm
+  ../../CPCF/essentials.cpp
+  ../../CPCF/core/ext/exprtk/exprtk.cpp
+  main.cpp
 )
-file(GLOB_RECURSE TEST
+file(GLOB_RECURSE TEST EXCLUDE contracts/scope.*
   contracts/*.prdts
   contracts/*.prd
 )
-file(GLOB_RECURSE SIMULATOR
+file(GLOB SIMULATOR
   *.cpp
   *.h
-  proj.win/*.h
 )
-file(GLOB_RECURSE RVM ../native/abi/*.h)
-file(GLOB_RECURSE types ../native/types/*.h)
+file(GLOB proj_win
+  proj.win/*.h
+  proj.win/preda.ico
+  proj.win/*.rc
+)
+file(GLOB RVM ../native/abi/*.h ../native/abi/*.cpp)
+file(GLOB RVM_TYPE ../native/types/*.h ../native/types/*.cpp)
 source_group("test" FILES ${TEST})
 source_group("simulator" FILES ${SIMULATOR})
-source_group("rvm" FILES ${RVM})
-source_group("rvm/types" FILES ${types})
-source_group("main" FILES ${CHAIN_SIMULATOR_FILE})
-source_group(TREE ${CMAKE_SOURCE_DIR}/native FILES ../native/abi/vm_address.h)
-add_executable(chain_simulator ${CHAIN_SIMULATOR_FILE})
+source_group("Source Files" FILES ${proj_win})
 
-# add_dependencies(chain_simulator oxd_libsec)
-# target_include_directories(chain_simulator PRIVATE
-# ../../CPCF
-# ../../CPCF/core/ext/exprtk
-# ./native/abi
-# ./simulator
-# )
+# source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/../native PREFIX "rvm" FILES ${RVM})
+source_group("rvm" FILES ${RVM})
+source_group("rvm/types" FILES ${RVM_TYPE})
+source_group("main" FILES ${CHAIN_SIMULATOR_FILE})
+add_executable(chain_simulator ${CHAIN_SIMULATOR_FILE} ${TEST} ${SIMULATOR} ${RVM} ${RVM_TYPE} ${proj_win})
+
 target_sources(chain_simulator PRIVATE
   ../../CPCF/essentials.cpp
   ../../CPCF/core/ext/exprtk/exprtk.cpp
@@ -61,11 +64,10 @@ if(WIN32)
 
   if(MSVC)
     target_compile_options(chain_simulator PRIVATE
-      $<$<CONFIG:Debug>:/ZI /JMC /W3 /MP /sdl /RTC1 /Od /GS /FC>
-      $<$<CONFIG:Release>:/Zi /W3 /sdl /MP /Gy /O2 /Oi /GL /GS /FC>
+      $<$<CONFIG:Debug>:/ZI /JMC /W3 /MP /sdl /RTC1 /Od /GS /FC /permissive>
+      $<$<CONFIG:Release>:/Zi /W3 /sdl /MP /Gy /O2 /Oi /GL /GS /FC /permissive>
     )
-
-    # target_compile_options(preda_engine PRIVATE "/MT$<$<CONFIG:Debug>:d>")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF /LTCG:incremental")
   endif()
 elseif(UNIX AND NOT APPLE)
   linux_link_ipp_rule(chain_simulator)
@@ -87,9 +89,9 @@ set_property(TARGET chain_simulator PROPERTY CXX_STANDARD 17)
 set_target_properties(chain_simulator PROPERTIES LINK_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
 set_target_properties(chain_simulator PROPERTIES CMAKE_POLICY_DEFAULT_CMP0069 NEW)
 set_target_properties(chain_simulator PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
-  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
-  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<CONFIG>/$<0:>
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/bin_$<LOWER_CASE:$<CONFIG>>/$<0:>
 )
 
 if(CMAKE_VERSION VERSION_GREATER 3.12)
