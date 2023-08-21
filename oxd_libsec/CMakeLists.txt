@@ -108,10 +108,10 @@ if(WIN32)
     set_target_properties(oxd_libsec PROPERTIES InheritWarningLevel TRUE)
 
     # ##################### add libsec_test to build as exe ###################################
-    option(DEV "oxd_libsec_test for devs" OFF)
-    message(STATUS "libsec_test sln is ${DEV}, to enable with -DDEV=ON")
+    option(INCLUDE_TEST_PROJECT "oxd_libsec_test for devs" OFF)
+    message(STATUS "INCLUDE_TEST_PROJECT sln is ${INCLUDE_TEST_PROJECT}, to enable with -DINCLUDE_TEST_PROJECT=ON")
 
-    if(DEV)
+    if(INCLUDE_TEST_PROJECT)
         add_executable(libsec_test
             ${ESSENTIALS_SOURCES}
             ${BOTAN_SOURCES}
