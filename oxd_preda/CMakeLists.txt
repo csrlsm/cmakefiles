@@ -21,14 +21,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CONFIGURATION_TYPES Release Debug)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 
-# set(CMAKE_CXX_FLAGS "")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3 /EHsc")
-string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-set(CMAKE_CXX_FLAGS_DEBUG "")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd /ZI /Od /RTC1")
-set(CMAKE_CXX_FLAGS_RELEASE "")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2 /DNDEBUG")
-
 if(WIN32)
     # Use the USERPROFILE environment variable to get the user's home directory on Windows
     execute_process(COMMAND cmd /c "echo %USERPROFILE%" OUTPUT_VARIABLE HOME_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -152,6 +144,13 @@ endif()
 
 # ############### build autlr4 ##############################
 if(WIN32)
+    # set(CMAKE_CXX_FLAGS "")
+    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DWIN32 /D_WINDOWS /W3 /EHsc")
+    string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
+    set(CMAKE_CXX_FLAGS_DEBUG "")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd /ZI /Od /RTC1")
+    set(CMAKE_CXX_FLAGS_RELEASE "")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2 /DNDEBUG")
     set(ANTLR4_DIR 3rdParty/antlr4/runtime/Cpp)
     file(GLOB_RECURSE ANTLR4_SOURCE
         ${ANTLR4_DIR}/runtime/src/*.cpp
