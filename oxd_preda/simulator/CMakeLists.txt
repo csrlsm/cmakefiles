@@ -58,14 +58,13 @@ target_link_libraries(chain_simulator PRIVATE "oxd_libsec$<$<CONFIG:Debug>:_d>")
 if(WIN32)
   target_sources(chain_simulator PRIVATE ../../CPCF/core/ext/bignum/ttmath/ttmathuint_x86_64_msvc.asm)
   set_source_files_properties(../../CPCF/core/ext/bignum/ttmath/ttmathuint_x86_64_msvc.asm PROPERTIES LANGUAGE ASM_MASM)
-  target_compile_options(chain_simulator PRIVATE /bigobj)
   target_link_directories(chain_simulator PRIVATE ../../CPCF/libs/win)
   target_link_libraries(chain_simulator PRIVATE ${IPP_LIB})
   win_sdk_rule(chain_simulator)
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /W3 /sdl /MP /Gy /O2 /Oi /GL /GS /FC /permissive")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /ZI /JMC /W3 /MP /sdl /RTC1 /Od /GS /FC /permissive")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /W3 /sdl /MP /Gy /O2 /Oi /GL /GS /FC /permissive /bigobj")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /ZI /JMC /W3 /MP /sdl /RTC1 /Od /GS /FC /permissive /bigobj")
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /OPT:ICF /OPT:REF /DEBUG /LTCG:incremental")
 
     # target_compile_options(chain_simulator PRIVATE
