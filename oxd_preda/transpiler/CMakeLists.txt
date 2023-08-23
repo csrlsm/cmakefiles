@@ -46,16 +46,8 @@ if(WIN32)
     set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "")
     set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG:FULL /INCREMENTAL")
     set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE_INIT} /DEBUG:FULL /OPT:REF /OPT:ICF /LTCG:incremental")
-
-    # set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /LTCG")
-    target_compile_options(transpiler PRIVATE
-      $<$<CONFIG:Debug>:/ZI /JMC /sdl /MP /permissive- /FC>
-      $<$<CONFIG:Release>:/Zi /W3 /sdl /Gy /Gd /Oi /FC /permissive- /GL>
-    )
-
-    # target_link_options(transpiler PRIVATE $<$<CONFIG:Release>:/LTCG>)
-
-    # set_target_properties(transpiler PROPERTIES LINK_FLAGS_RELEASE "/LTCG")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /W3 /sdl /Gy /Gd /Oi /FC /permissive- /GL")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /ZI /JMC /sdl /MP /permissive- /FC")
   endif()
 
   set_property(TARGET transpiler PROPERTY CXX_STANDARD 14)

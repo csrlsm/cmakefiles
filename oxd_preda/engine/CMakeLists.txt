@@ -82,6 +82,13 @@ target_link_directories(preda_engine PRIVATE
 target_link_libraries(preda_engine PRIVATE "oxd_libsec$<$<CONFIG:Debug>:_d>")
 
 if(WIN32)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG:FULL /INCREMENTAL")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE_INIT} /DEBUG:FULL /OPT:REF /OPT:ICF /LTCG:incremental")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi /W3 /MP /sdl /Gy /O2 /Oi /GL /GS /FC /bigobj")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /ZI /JMC /W3 /MP /sdl /RTC1 /Od /GS /FC /bigobj")
+  endif()
+
   target_include_directories(preda_engine
     PRIVATE
     ../3rdParty/evmone/win/include
@@ -97,27 +104,12 @@ if(WIN32)
     evmone
     ${IPP_LIB}
   )
-
   target_compile_definitions(preda_engine PRIVATE _WINDLL)
-
-  # target_link_options(preda_engine PRIVATE /INCREMENTAL /DEGUB:FULL)
-  target_compile_options(preda_engine PRIVATE ${CMAKE_CXX_FLAGS} /bigobj)
   target_sources(preda_engine
     PRIVATE
     ../../CPCF/core/ext/bignum/ttmath/ttmathuint_x86_64_msvc.asm
   )
-
-  if(MSVC)
-    set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG:FULL /INCREMENTAL")
-    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE_INIT} /DEBUG:FULL /OPT:REF /OPT:ICF /LTCG:incremental")
-    target_compile_options(preda_engine PRIVATE
-      $<$<CONFIG:Debug>:/ZI /JMC /W3 /MP /sdl /RTC1 /Od /GS /FC>
-      $<$<CONFIG:Release>:/Zi /W3 /MP /sdl /Gy /O2 /Oi /GL /GS /FC>
-    )
-
-    # target_compile_options(preda_engine PRIVATE "/MT$<$<CONFIG:Debug>:d>")
-  endif()
-
+  set_source_files_properties(../../CPCF/core/ext/bignum/ttmath/ttmathuint_x86_64_msvc.asm PROPERTIES LANGUAGE ASM_MASM)
   win_sdk_rule(preda_engine)
 elseif(UNIX AND NOT APPLE)
   linux_link_ipp_rule(preda_engine)
